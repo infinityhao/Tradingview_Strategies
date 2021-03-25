@@ -1,0 +1,63 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © infinityhao
+
+//@version=2
+// This bot using Fibonacci retracement strategy to trade intraday high and low
+// calc_on_every_tick - calculation to occur on every real-time tick
+// Commission type - Commission mfor an order. Money displayed in the account currency per order
+strategy("Price Action Strategy", shorttitle = "Price Action Strategy", overlay = true, calc_on_every_tick = false, initial_capital = 18500, currency = currency.USD, commission_type = strategy.commission.cash_per_order, commission_value = 30)
+
+// Input section
+DFVisible  = input(defval = false, title = "Day High/Low visible")
+WFVisible  = input(defval = true, title = "Week High/Low visible")
+
+// The security function enables scripts to request data from symbols
+// security function - https://www.tradingview.com/pine-script-docs/en/v4/essential/Context_switching_the_security_function.html
+// tickerid - https://www.tradingview.com/pine-script-reference/v4/#fun_tickerid
+
+// Week High/Low
+wF1000 = security(tickerid, 'W', high) // Creates a ticker indentifier for requesting "W" weekly high from symbols
+wF0    = security(tickerid, 'W', low)  // Creates a ticker indentifier for requesting "W" weekly low from symbols
+
+// Additional Fibonacci Retracement for references
+wF234 = (wF1000-wF0)*0.766+wF0             // Fibonacci Trailing Stop
+wF500 = (wF1000-wF0)/2+wF0                 // Fibonacci Retracement Level 50%
+wF786 = (wF1000-wF0)*0.214+wF0             // Fibonacci Retracement Level 78.6%
+
+plot(WFVisible?wF0:na, color = purple, linewidth = 2)
+plot(WFVisible?wF0[5]:na, title = "Last Week Low", color = purple, style = circles, linewidth = 1)
+plot(WFVisible?wF500:na, color = fuchsia, linewidth = 2)
+plot(WFVisible?wF1000:na, color = purple, linewidth = 2)
+plot(WFVisible?wF1000[5]:na, title = "Last Week High", color = purple, style = circles, linewidth = 1)
+
+// Additional Day View Mode
+dF1000 = security(tickerid, '2D', high) // Creates a ticker indentifier for requesting "D" daily high from symbols
+dF0   = security(tickerid, '2D', low)   // Creates a ticker indentifier for requesting "D" daily low from symbols
+dF234 = (dF1000-dF0)*0.766+dF0              // Fibonacci Trailing Stop
+dF500 = (dF1000-dF0)/2+dF0                  // Fibonacci Retracement Level 50%
+dF786 = (dF1000-dF0)*0.214+dF0              // Fibonacci Retracement Level 78.6%
+
+plot(DFVisible?dF0:na, color = #2196F3, title="Day Low", linewidth = 2)
+plot(DFVisible?dF234:na, color = maroon, style = circles, linewidth = 1)
+plot(DFVisible?dF500:na, color = #00FFFF, title="Day 50%", linewidth = 2)
+plot(DFVisible?dF786:na, color = green, style = circles, linewidth = 1)
+plot(DFVisible?dF1000:na, color = #2196F3, title="Day High", linewidth = 2)
+
+//units to buy
+amount = (strategy.initial_capital - strategy.losstrades) + 0.1*(strategy.netprofit)
+units = floor(amount / close)
+
+// Strategy section
+Last_wF1000Long = (crossover(close[1], wF1000[5]) and close[1] > wF1000[5])
+Last_wF0Short = (cross(close[1], wF0[5]) and close[1] < wF0[5])
+
+// Order Execution section
+if (Last_wF1000Long)
+    strategy.entry("Last_wF1000Long", strategy.long, units,  when=strategy.position_size <= 0)
+
+if (Last_wF0Short)
+    strategy.close_all(when=strategy.position_size > 0)
+
+// Create alert conditions
+alertcondition(Last_wF1000Long and (strategy.long == true), message="Price Action Long @ {{close}}")
+alertcondition(Last_wF0Short and (strategy.short == true),  message="Price Action Short @ {{close}}")

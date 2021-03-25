@@ -1,0 +1,56 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © infinityhao
+
+//@version=4
+strategy("BB RSI Strategy", overlay=true, calc_on_every_tick = true, initial_capital = 18500,
+     currency = currency.USD, commission_type = strategy.commission.cash_per_order, commission_value = 30)
+
+// Input Section
+length   = input(35, minval=1, title = "BB: SMA")
+mult     = input(2.0, minval=0.001, maxval=50, title = "Standard Deviation")
+rsiLength= input(21, minval=1, title = "RSI length")
+shortRSI = input(70, minval=1, maxval=100, title = "Short RSI percent")
+longRSI  = input(40, minval=1, maxval=100, title = "Long RSI percent")
+MAVisible= input(true, title = "Moving Averages Visible")
+
+// Bollinger Bands
+basis = sma(close, length)
+dev = mult * stdev(close, length)
+upperBand = basis + dev
+lowerBand = basis - dev
+
+// Moving Averages
+ma50 = sma(close,50)
+ma100 = sma(close,100)
+ma150 = sma(close,150)
+ma200 = sma(close,200)
+
+// RSI
+strength = rsi(close, rsiLength)
+
+p1 = plot(upperBand, color=color.gray)
+p2 = plot(lowerBand, color=color.gray)
+fill(p1, p2)
+p3 = plot(MAVisible?ma50:na, color=color.red)
+p4 = plot(MAVisible?ma100:na, color=color.blue)
+p5 = plot(MAVisible?ma150:na, color=color.green)
+p6 = plot(MAVisible?ma200:na, color=color.orange)
+
+// Order Units
+amount = 0.1 * (strategy.initial_capital + strategy.netprofit) - strategy.losstrades
+qty = floor(amount / close)
+
+// Strategy Section
+longCondition = close < lowerBand and strength < longRSI
+shortCondition = close > upperBand and strength > shortRSI
+
+// Order Execution Section
+if (longCondition)
+    strategy.order("Long", strategy.long, qty, when=strategy.position_size < qty * 5)
+
+if (shortCondition)
+    strategy.order("Short", strategy.short, qty, when=strategy.position_size > 0)
+
+// Create alert conditions
+alertcondition(longCondition and (strategy.long == true), message="BB RSI Strategy @ {{close}}")
+alertcondition(shortCondition and (strategy.short == true),  message="BB RSI Strategy @ {{close}}")

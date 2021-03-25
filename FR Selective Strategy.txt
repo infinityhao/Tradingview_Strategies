@@ -1,0 +1,151 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © infinityhao
+
+//@version=3
+// This bot using Fibonacci retracement strategy to trade intraday high and low
+// calc_on_every_tick - calculation to occur on every real-time tick
+// Commission type - Commission for an order. Money displayed in the account currency per order
+strategy("FR Selective Strategy ", shorttitle = "FR Selective Strategy", overlay = true, max_bars_back = 5000, calc_on_every_tick = true, initial_capital = 25000, currency = currency.SGD, commission_type = strategy.commission.cash_per_order, commission_value = 22)
+
+// The security function enables scripts to request data from symbols
+// security function - https://www.tradingview.com/pine-script-docs/en/v4/essential/Context_switching_the_security_function.html
+// tickerid - https://www.tradingview.com/pine-script-reference/v4/#fun_tickerid
+
+// Input type - https://www.tradingview.com/pine-script-docs/en/v4/annotations/Script_inputs.html
+per         = input(title  = "Calculate for last bars", defval = 4000)
+mFVisible   = input(title  = "Mini F50% Fibonacci Retracement Visible", type = bool, defval = true)   //default show Minix2 Fibonacci Retracements
+mx2FVisible = input(title  = "Mini X2 F50% Fibonacci Retracement Visible", type = bool, defval = false)   //default hide Minix2 Fibonacci Retracements to save memory
+
+hl=highest(high,per)
+ll=lowest(low,per)
+dist=hl-ll
+
+// Fibonacci Retracements
+F0    = close[per]<close ? hl : ll+dist
+F0505 = close[per]<close ? hl-dist*0.0505 : ll+dist*0.9495  //236 group
+F118  = close[per]<close ? hl-dist*0.118  : ll+dist*0.893   //Fibo50 group
+F1800 = close[per]<close ? hl-dist*0.1800 : ll+dist*0.8318  //786 group
+F236  = close[per]<close ? hl-dist*0.236  : ll+dist*0.786   //Fibo group
+F2500 = close[per]<close ? hl-dist*0.2674 : ll+dist*0.7460  //236 group
+F309  = close[per]<close ? hl-dist*0.309  : ll+dist*0.702   //Fibo50 group
+F3461 = close[per]<close ? hl-dist*0.3461 : ll+dist*0.6539  //786 group
+F382  = close[per]<close ? hl-dist*0.382  : ll+dist*0.618   //Fibo group
+F4376 = close[per]<close ? hl-dist*0.4329 : ll+dist*0.5623  //236 group
+F500  = close[per]<close ? hl-dist*0.5    : ll+dist*0.5     //Fibo50 group
+F5623 = close[per]<close ? hl-dist*0.5623 : ll+dist*0.4329  //786 group
+F618  = close[per]<close ? hl-dist*0.618  : ll+dist*0.382   //Fibo group
+F6539 = close[per]<close ? hl-dist*0.6539 : ll+dist*0.3461  //786 group
+F702  = close[per]<close ? hl-dist*0.702  : ll+dist*0.309   //Fibo50 group
+F7500 = close[per]<close ? hl-dist*0.7460 : ll+dist*0.2674  //236 group
+F786  = close[per]<close ? hl-dist*0.786  : ll+dist*0.236   //Fibo group
+F8318 = close[per]<close ? hl-dist*0.8318 : ll+dist*0.1800  //786 group
+F893  = close[per]<close ? hl-dist*0.893  : ll+dist*0.118   //Fibo50 group
+F9495 = close[per]<close ? hl-dist*0.9495 : ll+dist*0.0505  //236 group
+F1    = close[per]<close ? hl-dist : ll
+
+// 0 and 1
+plot(F0, color=silver, linewidth=2)
+plotshape(close[per]>close?F0:na, location=location.absolute, color=black, transp=0, text="0", textcolor=silver, style=shape.labeldown, show_last=1)
+plotshape(close[per]<close?F0:na, location=location.absolute, color=black, transp=0, text="1", textcolor=silver, style=shape.labeldown, show_last=1)
+plot(F1, color=silver, linewidth=2)
+plotshape(close[per]<close?F1:na, location=location.absolute, color=black, transp=0, text="0", textcolor=silver, style=shape.labeldown, show_last=1)
+plotshape(close[per]>close?F1:na, location=location.absolute, color=black, transp=0, text="1", textcolor=silver, style=shape.labeldown, show_last=1)
+
+// 0.5
+plot(F500, color=white, linewidth=2)
+plotshape(F500, location=location.absolute, color=black, transp=0, text="0.5", textcolor=white, style=shape.labeldown, show_last=1)
+
+// Group 0.236
+plot(close[per]>close?F236:na, color=red, linewidth=2)
+plotshape(close[per]>close?F236:na, location=location.absolute, color=black, transp=0, text="0.236", textcolor=red, style=shape.labeldown, show_last=1)
+plot(close[per]<close?F786:na,  color=red, linewidth=2)
+plotshape(close[per]<close?F786:na, location=location.absolute, color=black, transp=0, text="0.236", textcolor=red, style=shape.labeldown, show_last=1)
+
+// Group 0.786
+plot(close[per]>close?F786:na, color=red, linewidth=2)
+plotshape(close[per]>close?F786:na, location=location.absolute, color=black, transp=0, text="0.786", textcolor=red, style=shape.labeldown, show_last=1)
+plot(close[per]<close?F236:na, color=red, linewidth=2)
+plotshape(close[per]<close?F236:na, location=location.absolute, color=black, transp=0, text="0.786", textcolor=red, style=shape.labeldown, show_last=1)
+
+// 0.382
+plot(close[per]>close?F382:na, color=teal, linewidth=2)
+plotshape(close[per]>close?F382:na, color=black, transp=0, text="0.382", textcolor=teal, style=shape.labeldown, show_last=1)
+plot(close[per]<close?F618:na, color=lime, linewidth=2)
+plotshape(close[per]<close?F618:na, location=location.absolute, color=black, transp=0, text="0.382", textcolor=lime, style=shape.labeldown, show_last=1)
+
+// 0.618
+plot(close[per]>close?F618:na, color=lime, linewidth=2)
+plotshape(close[per]>close?F618:na, location=location.absolute, color=black, transp=0, text="0.618", textcolor=lime, style=shape.labeldown, show_last=1)
+plot(close[per]<close?F382:na, color=teal, linewidth=2)
+plotshape(close[per]<close?F382:na, location=location.absolute, color=black, transp=0, text="0.618", textcolor=teal, style=shape.labeldown, show_last=1)
+
+// Yellow group - mini Half Fibonacci Retracement - mini Fibonacci Retracement inside Fibonacci Retracement - no labels
+// 0.118 and 0.893
+plot((mFVisible and close[per]>close)?F118:na, color=yellow)
+plot(close[per]<close?F893:na, color=yellow)
+
+plot((mFVisible and close[per]>close)?F893:na, color=yellow)
+plot((mFVisible and close[per]<close)?F118:na, color=yellow)
+
+// 0.309 and 0.702
+plot((mFVisible and close[per]>close)?F309:na, color=yellow)
+plot((mFVisible and close[per]<close)?F702:na, color=yellow)
+
+plot((mFVisible and close[per]>close)?F702:na, color=yellow)
+plot((mFVisible and close[per]<close)?F309:na, color=yellow)
+
+// Orange group - mini x2 Half Fibonacci Retracement - mini Fibonacci Retracement inside Fibonacci Retracement
+// 0.0505 and 0.9495
+plot((mFVisible and close[per]>close)?F0505:na, color=orange)
+plot((mFVisible and close[per]<close)?F9495:na, color=orange)
+
+plot((mFVisible and close[per]>close)?F9495:na, color=orange)
+plot((mFVisible and close[per]<close)?F0505:na, color=orange)
+
+// 0.1682 and 0.8318
+plot((mFVisible and close[per]>close)?F1800:na, color=orange)
+plot((mFVisible and close[per]<close)?F8318:na, color=orange)
+
+plot((mFVisible and close[per]>close)?F8318:na, color=orange)
+plot((mFVisible and close[per]<close)?F1800:na, color=orange)
+
+// 0.2500 and 0.7500
+plot((mFVisible and close[per]>close)?F2500:na, color=orange)
+plot((mFVisible and close[per]<close)?F7500:na, color=orange)
+
+plot((mFVisible and close[per]>close)?F7500:na, color=orange)
+plot((mFVisible and close[per]<close)?F2500:na, color=orange)
+
+// 0.3461 and 0.6539
+plot((mFVisible and close[per]>close)?F3461:na, color=orange)
+plot((mFVisible and close[per]<close)?F6539:na, color=orange)
+
+plot((mFVisible and close[per]>close)?F6539:na, color=orange)
+plot((mFVisible and close[per]<close)?F3461:na, color=orange)
+
+// 0.5623 and 0.4376
+plot((mFVisible and close[per]>close)?F4376:na, color=orange)
+plot((mFVisible and close[per]<close)?F5623:na, color=orange)
+
+plot((mFVisible and close[per]>close)?F5623:na, color=orange)
+plot((mFVisible and close[per]<close)?F4376:na, color=orange)
+
+// Strategy section
+longFiboGroup = (crossover(close, F236) and close > F236) or (crossover(close, F382) and close > F382) or (crossover(close, F500) and close > F500) or (crossover(close, F618) and close > F618) or (crossover(close, F786) and close > F786)
+shortFiboGroup = (crossunder(close, F236) and close < F236) or (crossunder(close, F382) and close < F382) or (crossunder(close, F500) and close < F500) or (crossunder(close, F618) and close < F618) or (crossunder(close, F786) and close < F786)
+long236group =  (crossover(close, F0505) and close > F0505) or (crossover(close, F2500) and close > F2500) or (crossover(close, F4376) and close > F4376) or (crossover(close, F7500) and close > F7500) or (crossover(close, F9495) and close > F9495)
+short236group =  (crossunder(close, F0505) and close < F0505) or (crossunder(close, F2500) and close < F2500) or (crossunder(close, F4376) and close < F4376) or  (crossunder(close, F7500) and close < F7500) or (crossunder(close, F9495) and close < F9495)
+long786group =  (crossover(close, F1800) and close > F1800) or (crossover(close, F3461) and close > F3461) or (crossover(close, F5623) and close > F5623) or (crossover(close, F6539) and close > F6539) or (crossover(close, F8318) and close > F8318)
+short786group =  (crossunder(close, F1800) and close < F1800) or (crossunder(close, F3461) and close < F3461) or (crossunder(close, F5623) and close < F5623) or (crossunder(close, F6539) and close < F6539) or (crossunder(close, F8318) and close < F8318)
+
+longCondition = longFiboGroup or long236group or long786group
+if (longCondition)
+    strategy.entry("Long F50 Entry", strategy.long, 130, when=strategy.position_size <= 0)
+
+shortCondition = shortFiboGroup or short236group or short786group
+if (shortCondition)
+    strategy.entry("Short F50 Closed", strategy.short, 130, when=strategy.position_size > 0)
+
+// Create alert conditions
+alertcondition(longCondition and (strategy.long == true), message="Long")
+alertcondition(shortCondition and (strategy.short == true),  message="Short")

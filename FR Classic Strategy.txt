@@ -1,0 +1,234 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © infinityhao
+
+//@version=3
+// This bot using Fibonacci retracement strategy to trade intraday high and low
+// calc_on_every_tick - calculation to occur on every real-time tick
+// Commission type - Commission for an order. Money displayed in the account currency per order
+strategy("FR Classic Strategy ", shorttitle = "FR Classic Strategy", overlay = true, max_bars_back = 5000, calc_on_every_tick = true, initial_capital = 18500, currency = currency.USD, commission_type = strategy.commission.cash_per_order, commission_value = 30)
+
+// The security function enables scripts to request data from symbols
+// security function - https://www.tradingview.com/pine-script-docs/en/v4/essential/Context_switching_the_security_function.html
+// tickerid - https://www.tradingview.com/pine-script-reference/v4/#fun_tickerid
+
+// Input type - https://www.tradingview.com/pine-script-docs/en/v4/annotations/Script_inputs.html
+qty         = input(defval = 50, title = "Order Quantity")
+days        = input(defval = 694, title = "Top Bottom Indicator range in days")
+per         = input(title  = "Calculate for last bars", defval = 300)
+mFVisible   = input(title  = "Mini F50% Fibonacci Retracement Visible", defval = true)   //default show Minix2 Fibonacci Retracements
+mx2FVisible = input(title  = "Mini X2 F50% Fibonacci Retracement Visible", defval = true)   //default hide Minix2 Fibonacci Retracements to save memory
+
+// Top Bottom Indicator
+milliseconds_in_15days = 1000 * 60 * 60 * 24 * days  // millisecs * secs * min * hours * days
+// plot(milliseconds_in_5days, title="ms in 5d", style=circles) //debug
+// subtract timestamp of the bar being examined from the current time
+// if value is less than 5 days ago, set variable "leftborder" as true
+// this is set true at the bar being examined as the left border of the 5 days lookback window range
+leftborder = timenow - time < milliseconds_in_15days  // true or na when false
+// plot(leftborder ? 1 : na, title="bar within leftborder")  //debug
+// plot(time, title="bartime") //debug
+// plot(timenow - time, title="timenow minus bartime")  //debug
+
+// treat the last bar (most recent bar) as the right edge of the lookback window range
+rightborder = barstate.ishistory
+
+// initialize variable "max" as na
+max = na
+min = na
+
+// if bar being examined is not within the lookback window range (i.e., leftborder = false)
+// change the variable "max" to be na
+// else, test if value of "max" stored in the previous bar is na
+// (bcuz first bar being examined in the lookback window will not have a previous value ),
+// if it is na, use the high of the current bar,
+// else, use the value of "max" stored in the previous bar
+max := not leftborder ? na : na(max[1]) ? high : max[1]
+min := not leftborder ? na : na(min[1]) ? low : min[1]
+
+// plot(max ? max : na, title="max b4 compare")  // debug
+
+// compare high of current bar being examined with previous bar's high
+// if curr bar high is higher than the max bar high in the lookback window range
+if high > max  // we have a new high
+    max := high  // change variable "max" to use current bar's high value
+    max
+
+if low < min  // we have a new high
+    min := low  // change variable "max" to use current bar's high value
+    min
+
+// else keep the previous value of max as the high bar within this lookback window range
+// plot(max ? max : na, title="max after compare")  //debug
+
+// if examining the last bar (newest bar, rightborder is true)
+// set variable "val" to the previous value of series variable "max"
+// else set to na so nothing is plotted
+valMax = rightborder ? max[1] : na
+valMin = rightborder ? min[1] : na
+
+// if val is true (a number, not na)
+// plot character
+// since no character is specified, a "star" will be plotted
+// location.absolute uses the value of val as the y axis value
+// the x axis location will be the last bar (newest bar)
+
+//plotshape(valMax, text="Topped, LH change symbol! ", title="Top", style=shape.labeldown, color=red, textcolor=white, location=location.absolute, transp=0)
+//plotshape(valMin, text="Bot, earn money!", title="Bottom", style=shape.labelup, color=lime, textcolor=black, location=location.absolute, transp=0)
+
+//plotchar(val, size=size.normal, location=location.absolute)
+//plotchar(val, size=size.normal, location=location.absolute)
+
+// fill the background of the 5 days lookback window range with aqua color
+//bgcolor(leftborder and not rightborder?aqua:na, transp=70)
+
+hl=valMax
+ll=valMin
+dist=hl-ll
+
+// Fibonacci Retracements
+F0    = close[per]<close ? hl : ll+dist
+F0059 = close[per]<close ? hl-dist*0.059  : ll+dist*0.9465
+F118  = close[per]<close ? hl-dist*0.118  : ll+dist*0.893
+F177  = close[per]<close ? hl-dist*0.177  : ll+dist*0.8395
+F236  = close[per]<close ? hl-dist*0.236  : ll+dist*0.786
+F256  = close[per]<close ? hl-dist*0.2726 : ll+dist*0.744
+F309  = close[per]<close ? hl-dist*0.309  : ll+dist*0.702
+F3455 = close[per]<close ? hl-dist*0.3455 : ll+dist*0.660
+F382  = close[per]<close ? hl-dist*0.382  : ll+dist*0.618
+F4115 = close[per]<close ? hl-dist*0.4115 : ll+dist*0.5885
+F441  = close[per]<close ? hl-dist*0.441  : ll+dist*0.559
+F4705 = close[per]<close ? hl-dist*0.4705 : ll+dist*0.5295
+F500  = close[per]<close ? hl-dist*0.5    : ll+dist*0.5
+F5295 = close[per]<close ? hl-dist*0.5295 : ll+dist*0.4705
+F559  = close[per]<close ? hl-dist*0.559  : ll+dist*0.441
+F5885 = close[per]<close ? hl-dist*0.5885 : ll+dist*0.4115
+F618  = close[per]<close ? hl-dist*0.618  : ll+dist*0.382
+F660  = close[per]<close ? hl-dist*0.660  : ll+dist*0.3455
+F702  = close[per]<close ? hl-dist*0.702  : ll+dist*0.309
+F744  = close[per]<close ? hl-dist*0.744  : ll+dist*0.2726
+F786  = close[per]<close ? hl-dist*0.786  : ll+dist*0.236
+F8395 = close[per]<close ? hl-dist*0.8395 : ll+dist*0.177
+F893  = close[per]<close ? hl-dist*0.893  : ll+dist*0.118
+F9465 = close[per]<close ? hl-dist*0.9465 : ll+dist*0.059
+F1    = close[per]<close ? hl-dist : ll
+
+// 0 and 1
+plot(F0, color=silver, linewidth=2)
+plotshape(close[per]>close?F0:na, location=location.absolute, color=black, transp=0, text="0", textcolor=silver, style=shape.labeldown, show_last=1)
+plotshape(close[per]<close?F0:na, location=location.absolute, color=black, transp=0, text="1", textcolor=silver, style=shape.labeldown, show_last=1)
+plot(F1, color=silver, linewidth=2)
+plotshape(close[per]<close?F1:na, location=location.absolute, color=black, transp=0, text="0", textcolor=silver, style=shape.labeldown, show_last=1)
+plotshape(close[per]>close?F1:na, location=location.absolute, color=black, transp=0, text="1", textcolor=silver, style=shape.labeldown, show_last=1)
+
+// 0.5
+plot(F500, color=fuchsia, linewidth=1)
+plotshape(F500, location=location.absolute, color=black, transp=0, text="0.5", textcolor=fuchsia, style=shape.labeldown, show_last=1)
+
+// Group 0.236
+plot(close[per]>close?F236:na, color=red, linewidth=1)
+plotshape(close[per]>close?F236:na, location=location.absolute, color=black, transp=0, text="0.236", textcolor=red, style=shape.labeldown, show_last=1)
+plot(close[per]<close?F786:na,  color=red, linewidth=1)
+plotshape(close[per]<close?F786:na, location=location.absolute, color=black, transp=0, text="0.236", textcolor=red, style=shape.labeldown, show_last=1)
+
+// Group 0.786
+plot(close[per]>close?F786:na, color=red, linewidth=1)
+plotshape(close[per]>close?F786:na, location=location.absolute, color=black, transp=0, text="0.786", textcolor=red, style=shape.labeldown, show_last=1)
+plot(close[per]<close?F236:na, color=red, linewidth=1)
+plotshape(close[per]<close?F236:na, location=location.absolute, color=black, transp=0, text="0.786", textcolor=red, style=shape.labeldown, show_last=1)
+
+// 0.382
+plot(close[per]>close?F382:na, color=teal, linewidth=1)
+plotshape(close[per]>close?F382:na, location=location.absolute, color=black, transp=0, text="0.382", textcolor=teal, style=shape.labeldown, show_last=1)
+plot(close[per]<close?F618:na, color=lime, linewidth=1)
+plotshape(close[per]<close?F618:na, location=location.absolute, color=black, transp=0, text="0.382", textcolor=lime, style=shape.labeldown, show_last=1)
+
+// 0.618
+plot(close[per]>close?F618:na, color=lime, linewidth=1)
+plotshape(close[per]>close?F618:na, location=location.absolute, color=black, transp=0, text="0.618", textcolor=lime, style=shape.labeldown, show_last=1)
+plot(close[per]<close?F382:na, color=teal, linewidth=1)
+plotshape(close[per]<close?F382:na, location=location.absolute, color=black, transp=0, text="0.618", textcolor=teal, style=shape.labeldown, show_last=1)
+
+// Yellow group - mini Half Fibonacci Retracement - mini Fibonacci Retracement inside Fibonacci Retracement - no labels
+// 0.118 and 0.893
+plot((mFVisible and close[per]>close)?F118:na, color=yellow, linewidth=1, style=circles)
+plot((mFVisible and close[per]<close)?F893:na, color=yellow, linewidth=1, style=circles)
+
+plot((mFVisible and close[per]>close)?F893:na, color=yellow, linewidth=1, style=circles)
+plot((mFVisible and close[per]<close)?F118:na, color=yellow, linewidth=1, style=circles)
+
+// 0.309 and 0.702
+plot((mFVisible and close[per]>close)?F309:na, color=yellow, linewidth=1, style=circles)
+plot((mFVisible and close[per]<close)?F702:na, color=yellow, linewidth=1, style=circles)
+
+plot((mFVisible and close[per]>close)?F702:na, color=yellow, linewidth=1, style=circles)
+plot((mFVisible and close[per]<close)?F309:na, color=yellow, linewidth=1, style=circles)
+
+// 0.441 and 0.559
+plot((mFVisible and close[per]>close)?F441:na, color=yellow, linewidth=1, style=circles)
+plot((mFVisible and close[per]<close)?F559:na, color=yellow, linewidth=1, style=circles)
+
+plot((mFVisible and close[per]>close)?F559:na, color=yellow, linewidth=1, style=circles)
+plot((mFVisible and close[per]<close)?F441:na, color=yellow, linewidth=1, style=circles)
+
+// Orange group - mini x2 Half Fibonacci Retracement - mini Fibonacci Retracement inside Fibonacci Retracement
+// 0.059 and 0.9465
+plot((mx2FVisible and close[per]>close)?F0059:na, color=orange, linewidth=1, style=circles)
+plot((mx2FVisible and close[per]<close)?F9465:na, color=orange, linewidth=1, style=circles)
+
+plot((mx2FVisible and close[per]>close)?F9465:na, color=orange, linewidth=1, style=circles)
+plot((mx2FVisible and close[per]<close)?F0059:na, color=orange, linewidth=1, style=circles)
+
+// 0.177 and 0.8395
+plot((mx2FVisible and close[per]>close)?F177:na, color=orange, linewidth=1, style=circles)
+plot((mx2FVisible and close[per]<close)?F8395:na, color=orange, linewidth=1, style=circles)
+
+plot((mx2FVisible and close[per]>close)?F8395:na, color=orange, linewidth=1, style=circles)
+plot((mx2FVisible and close[per]<close)?F177:na, color=orange, linewidth=1, style=circles)
+
+// 0.256 and 0.744(problem)
+plot((mx2FVisible and close[per]>close)?F256:na, color=orange, linewidth=1, style=circles)
+plot((mx2FVisible and close[per]<close)?F744:na, color=orange, linewidth=1, style=circles)
+
+plot((mx2FVisible and close[per]>close)?F744:na, color=orange, linewidth=1, style=circles)
+plot((mx2FVisible and close[per]<close)?F256:na, color=orange, linewidth=1, style=circles)
+
+// 0.3455 and 0.660
+plot((mx2FVisible and close[per]>close)?F3455:na, color=orange, linewidth=1, style=circles)
+plot((mx2FVisible and close[per]<close)?F660:na, color=orange, linewidth=1, style=circles)
+
+plot((mx2FVisible and close[per]>close)?F660:na, color=orange, linewidth=1, style=circles)
+plot((mx2FVisible and close[per]<close)?F3455:na, color=orange, linewidth=1, style=circles)
+
+// 0.4115 and 0.5885
+plot((mx2FVisible and close[per]>close)?F4115:na, color=orange, linewidth=1, style=circles)
+plot((mx2FVisible and close[per]<close)?F5885:na, color=orange, linewidth=1, style=circles)
+
+plot((mx2FVisible and close[per]>close)?F5885:na, color=orange, linewidth=1, style=circles)
+plot((mx2FVisible and close[per]<close)?F4115:na, color=orange, linewidth=1, style=circles)
+
+// 0.4705 and 0.5295
+plot((mx2FVisible and close[per]>close)?F4705:na, color=orange, linewidth=1, style=circles)
+plot((mx2FVisible and close[per]<close)?F5295:na, color=orange, linewidth=1, style=circles)
+
+plot((mx2FVisible and close[per]>close)?F5295:na, color=orange, linewidth=1, style=circles)
+plot((mx2FVisible and close[per]<close)?F4705:na, color=orange, linewidth=1, style=circles)
+
+
+// Strategy section
+longFiboGroup = (crossover(close, F236) and close > F236) or (crossover(close, F382) and close > F382) or (crossover(close, F500) and close > F500) or (crossover(close, F618) and close > F618) or (crossover(close, F786) and close > F786)
+longYellowGroup = (crossover(close, F500) and close > F500) or (crossover(close, F118) and close > F118) or (crossover(close, F309) and close > F309) or (crossover(close, F441) and close > F441) or (crossover(close, F559) and close > F559) or (crossover(close, F893) and close > F893)
+longOrangeGroup = (crossover(close, F0059) and close > F0059) or (crossover(close, F177) and close > F177) or (crossover(close, F256) and close > F256) or (crossover(close, F3455) and close > F3455) or (crossover(close, F4115) and close > F4115) or (crossover(close, F4705) and close > F4705) or (crossover(close, F5295) and close > F5295) or (crossover(close, F5885) and close > F5885) or (crossover(close, F660) and close > F660) or (crossover(close, F8395) and close > F8395) or (crossover(close, F9465) and close > F9465)
+longCondition = (crossover(close, F786) and close > F786) //or longYellowGroup or longOrangeGroup
+if (longCondition)
+    strategy.entry("Long F50 Entry", strategy.long, qty, when=strategy.position_size <= 0)
+
+shortFiboGroup = (crossunder(close, F236) and close < F236) or (crossunder(close, F382) and close < F382) or (crossunder(close, F500) and close < F500) or (crossunder(close, F618) and close < F618) or (crossunder(close, F786) and close < F786)
+shortYellowGroup = (crossunder(close, F500) and close < F500) or (crossunder(close, F118) and close < F118) or (crossunder(close, F309) and close < F309) or (crossunder(close, F441) and close < F441) or (crossunder(close, F559) and close < F559) or (crossunder(close, F893) and close < F893)
+shortOrangeGroup = (crossunder(close, F0059) and close < F0059) or (crossunder(close, F177) and close < F177) or (crossunder(close, F256) and close < F256) or (crossunder(close, F3455) and close < F3455) or (crossunder(close, F4115) and close < F4115) or (crossunder(close, F4705) and close < F4705) or (crossunder(close, F5295) and close < F5295) or (crossunder(close, F5885) and close < F5885) or (crossunder(close, F660) and close < F660) or (crossunder(close, F8395) and close < F8395) or (crossunder(close, F9465) and close < F9465)
+shortCondition = (crossunder(close, F236) and close < F236) //or shortYellowGroup or shortOrangeGroup
+if (shortCondition)
+    strategy.entry("Short F50 Closed", strategy.short, qty, when=strategy.position_size > 0)
+
+// Create alert conditions
+alertcondition(longCondition and (strategy.long == true), message="Long")
+alertcondition(shortCondition and (strategy.short == true),  message="Short")

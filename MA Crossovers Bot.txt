@@ -1,0 +1,93 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// ©author infinityhao
+
+//@version=4
+
+strategy(shorttitle = "MA Crossover Bot", title = "Moving Averages Crossover Bot", overlay = true, calc_on_every_tick = true)  //calculation to occur on every real-time tick
+
+// MAPeriod is a variable used to store the indicator lookback period.
+// Input type - https://www.tradingview.com/pine-script-docs/en/v4/annotations/Script_inputs.html
+MA1Period = input(50, title = "MA Period")
+MA1Type = input(title = "MA1 Type", defval = "SMA", options = ["RMA", "SMA", "EMA", "WMA"])
+MA1Source = input(title="MA1 Source", type = input.source, defval = close)
+MA1Visible = input(title = "MA1 Visible", type = input.bool, defval = true) //default show crossover containing this MA
+MA2Period = input(100, title = "MA2 Period")
+MA2Type = input(title = "MA2 Type", defval = "SMA", options = ["RMA", "SMA", "EMA", "WMA"])
+MA2Source = input(title="MA1 Source", type = input.source, defval = close)
+MA2Visible = input(title = "MA2 Visible", type = input.bool, defval = true) //default show crossover containing this MA
+
+ShowCrosses = input(title = "Show Crosses", type = input.bool, defval = true)
+
+// MA is a variable used to store the moving average value.
+// if statements - https://www.tradingview.com/pine-script-reference/#op_if
+// MA functions - https://www.tradingview.com/pine-script-reference/ (must search for appropriate MA)
+MA1 = if MA1Type == "SMA"
+    sma(MA1Source, MA1Period)
+else
+    if MA1Type == "EMA"
+        ema(MA1Source, MA1Period)
+    else
+        if MA1Type == "WMA"
+            wma(MA1Source, MA1Period)
+        else
+            if MA1Type == "RMA"
+                rma(MA1Source, MA1Period)
+            else
+                if MA1Type == "HMA"
+                    wma(2 * wma(MA1Source, MA1Period/2) - wma(MA1Source, MA1Period), round(sqrt(MA1Period)))
+                else
+                    if MA1Type == "DEMA"
+                        e = ema(MA1Source, MA1Period)
+                        2 * e - ema(e, MA1Period)
+                    else
+                        if MA1Type == "TEMA"
+                            e = ema(MA1Source, MA1Period)
+                            3 * (e - ema(e, MA1Period)) + ema(ema(e, MA1Period), MA1Period)
+
+
+MA2 = if MA2Type == "SMA"
+    sma(MA2Source, MA2Period)
+else
+    if MA2Type == "EMA"
+        ema(MA2Source, MA2Period)
+    else
+        if MA2Type == "WMA"
+            wma(MA2Source, MA2Period)
+        else
+            if MA2Type == "RMA"
+                rma(MA2Source, MA2Period)
+            else
+                if MA2Type == "HMA"
+                    wma(2 * wma(MA2Source, MA2Period/2) - wma(MA2Source, MA2Period), round(sqrt(MA2Period)))
+                else
+                    if MA2Type == "DEMA"
+                        e = ema(MA2Source, MA2Period)
+                        2 * e - ema(e, MA2Period)
+                    else
+                        if MA2Type == "TEMA"
+                            e = ema(MA2Source, MA2Period)
+                            3 * (e - ema(e, MA2Period)) + ema(ema(e, MA2Period), MA2Period)
+
+// AI section
+// AI section - https://www.tradingview.com/pine-script-docs/en/v4/essential/Strategies.html
+if ShowCrosses and MA1Visible and MA2Visible and crossunder(MA1, MA2)
+    lun1 = label.new(bar_index, na, tostring(MA1Period)+' '+MA1Type+' crossed under '+tostring(MA2Period)+' '+MA2Type,
+      color = color.red,
+      textcolor = color.red,
+      style = label.style_xcross, size = size.small)
+    label.set_y(lun1, MA1)
+    strategy.entry("sell", strategy.short, 100, when=strategy.position_size > 0)
+if ShowCrosses and MA1Visible and MA2Visible and crossover(MA1, MA2)
+    lup1 = label.new(bar_index, na, tostring(MA1Period)+' '+MA1Type+' crossed over '+tostring(MA2Period)+' '+MA2Type,
+      color = color.green,
+      textcolor = color.green,
+      style = label.style_xcross, size = size.small)
+    label.set_y(lup1, MA1)
+    strategy.entry("buy", strategy.long, 100, when=strategy.position_size <= 0)
+
+
+// Plot - This will plot the information on the chart
+// Plot - https://www.tradingview.com/pine-script-docs/en/v4/annotations/plot_annotations.html
+// if MAVisible is true, then plot the MA with label.
+plot(MA1Visible ? MA1 : na, color = color.green, linewidth = 2)
+plot(MA2Visible ? MA2 : na, color = color.yellow, linewidth = 3)

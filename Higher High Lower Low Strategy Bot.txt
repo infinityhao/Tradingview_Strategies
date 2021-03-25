@@ -1,0 +1,114 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © infinityhao
+
+//@version=4
+// This script finds pivot highs and pivot lows then calculates higher highs & lower lows.
+// And also it calculates support/resistance by using HH-HL-LL-LH points.
+strategy("Higher High Lower Low Strategy Bot", overlay =true)
+
+// 1 left bar, 1 middle bar and 1 right bar to form the triangle
+lb = input(1, title = "Left Bars", minval = 1)
+rb = input(1, title = "Right Bars", minval = 1)
+
+// mb is margin of bars
+mb = lb + rb
+
+// Pivot High - to find the highest bar and trigger at second highest bar
+// iff function - iff(condition, result1, result2), condition true = result1 else result2
+// na is a generic value of no particular type
+// if current high price of mb is not na, then go into another sub iff (next line), else ph = na
+// if highestbars of current high price of mb is true then ph = -lb, else ph = high[lb]
+// iff function - https://www.tradingview.com/pine-script-docs/en/v4/language/Operators.html
+ph = iff(not na(high[mb]), iff(highestbars(high, mb) == -lb, high[lb], na), na)
+
+// Pivot Low - to find the lowest bar and trigger at second lowest bar
+// iff function - iff(condition, result1, result2), condition true = result1 else result2
+// if current low price of mb is not na, then go into another sub iff (next line), else pl = na
+// if lowestbars of current low price of mb is true then pl = -lb, else pl = low[lb]
+// iff function - https://www.tradingview.com/pine-script-docs/en/v4/language/Operators.html
+pl = iff(not na(low[mb]), iff(lowestbars(low, mb) == -lb, low[lb], na), na)
+
+// Determine Trend Direction, hl is highest or lowest
+int hl = na
+// if ph is true then hl = 1 else go into another sub iff (next line)
+// if pl is true then hl = -1 else hl = na
+// hl positive number means uptrend, negative means downtrend
+// := history referencing operator - to refer to the historical values of any variable of a series type (values which the variable had on the previous bars)
+hl := iff(ph, 1, iff(pl, -1, na))
+
+// zz is zigzag pattern with multiple highs or lows
+float zz = na
+// if ph is true then zz = ph else go into another sub iff (next line)
+// if pl is true zz = pl else zz = na)
+zz := iff(ph, ph, iff(pl, pl, na))
+
+// valuewhen(condition, source, occurrence) → series[integer]
+// get value of hl/zz variable on second cross occurrence, this is because after confirmed the first highest or lowest bar
+// and the second bar did not exceed the first bar
+// valuewhen - https://www.tradingview.com/pine-script-reference/#fun_valuewhen
+// if pl and h1 == -1 is to double confirm pl == -lb (lowest bar) and h1 is -1 (downtrend) and zz lesser than zz(second) to prove lower low
+// if ph and h1 == 1 is to double confirm ph == -lb (highest bar) and h1 is 1 (uptrend) and zz greater than zz(second) to prove higher high
+zz := iff(pl and hl == -1 and valuewhen(hl, hl, 1) == -1 and zz > valuewhen (zz, zz, 1), na, zz)
+zz := iff(ph and hl == 1 and valuewhen(hl, hl, 1) == 1 and zz < valuewhen(zz, zz, 1), na, zz)
+
+hl := iff(hl == -1 and valuewhen(hl, hl, 1) == 1 and zz > valuewhen(zz, zz, 1), na, hl)
+hl := iff(hl == 1 and valuewhen(hl, hl, 1) == -1 and zz < valuewhen(zz, zz, 1), na, hl)
+zz := iff(na(hl), na, zz)
+
+findprevious()=>    // finds previous three points (b, c, d, e)
+    ehl = iff(hl == 1, -1, 1) // First cycle start
+    loc1 = 0.0, loc2 = 0.0, loc3 = 0.0, loc4 = 0.0  // to initialise loc
+    xx = 0  // initial counter
+    for x = 1 to 1000
+        if hl[x] == ehl and not na(zz[x])
+            loc1 := zz[x]
+            xx := x + 1
+            break
+    ehl := hl   // First cycle peak
+    for x = xx to 1000
+        if hl[x] == ehl and not na(zz[x])
+            loc2 := zz[x]
+            xx := x + 1
+            break
+    ehl := iff(hl == 1, -1, 1) // Second cycle start
+    for x = xx to 1000
+        if hl[x] == ehl and not na(zz[x])
+            loc3 := zz[x]
+            xx := x + 1
+            break
+    ehl := hl  // Second cycle peak
+    for x = xx to 1000
+        if hl[x] == ehl and not na(zz[x])
+            loc4 := zz[x]
+            xx := x + 1
+            break
+    [loc1, loc2, loc3, loc4]    // group arrays together
+
+float a = na, float b = na, float c = na, float d = na, float e = na
+if not na(hl)
+    [loc1, loc2, loc3, loc4] = findprevious()
+    // Passing loc values to a, b, c, d, e
+    a := zz
+    b := loc1
+    c := loc2
+    d := loc3
+    e := loc4
+
+// AI section
+higherHigh = zz and (a > b and a > c and c > b and c > d)
+higherLow = zz and ((a >= c and (b > c and b > d and d > c and d > e)) or (a < b and a > c and b < d))
+lowerHigh = zz and ((a <= c and (b < c and b < d and d < c and d < e)) or (a > b and a < c and b > d))
+lowerLow = zz and (a < b and a < c and c < b and c < d)
+
+// For testing of actual orders whether aligning with indicator or not
+//plotshape(higherHigh, text="HH", title="Higher High", style=shape.labeldown, color=color.lime, textcolor=color.black, location=location.abovebar, transp=0, offset = -lb)
+//plotshape(higherLow, text="HL", title="Higher Low", style=shape.labelup, color=color.lime, textcolor=color.black, location=location.belowbar, transp=0, offset = -lb)
+//plotshape(lowerHigh, text="LH", title="Lower High", style=shape.labeldown, color=color.red, textcolor=color.white, location=location.abovebar, transp=0, offset = -lb)
+//plotshape(lowerLow, text="LL", title="Lower Low", style=shape.labelup, color=color.red, textcolor=color.white, location=location.belowbar, transp=0, offset = -lb)
+
+// Order Executer
+if higherHigh and (not na(higherHigh)) or (lowerHigh and (not na(lowerHigh)))
+    strategy.entry("buy", strategy.long, 130, when=strategy.position_size <= 0)
+
+if higherHigh and (not na(higherHigh)) or (lowerLow and (not na(lowerLow)))
+    strategy.entry("sell", strategy.short, 130, when=strategy.position_size > 0)

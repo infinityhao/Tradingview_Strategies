@@ -1,0 +1,138 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © infinityhao
+
+//@version=2
+// This bot using Fibonacci retracement strategy to trade intraday high and low
+// calc_on_every_tick - calculation to occur on every real-time tick
+// Commission type - Commission mfor an order. Money displayed in the account currency per order
+strategy("Fibonacci Retracement 234 Trend Strategy", shorttitle = "FR 234 Trend Strategy", overlay = true, calc_on_every_tick = false, initial_capital = 18500, currency = currency.USD, commission_type = strategy.commission.cash_per_order, commission_value = 30)
+
+// Input section
+DFVisible  = input(defval = false, title = "Day Fibonacci Retracement visible")
+WFVisible  = input(defval = false, title = "Week Fibonacci Retracement visible")
+MFVisible  = input(defval = false, title = "Month Fibonacci Retracement visible")
+YFVisible  = input(defval = true, title = "Year Fibonacci Retracement visible")
+
+// The security function enables scripts to request data from symbols
+// security function - https://www.tradingview.com/pine-script-docs/en/v4/essential/Context_switching_the_security_function.html
+// tickerid - https://www.tradingview.com/pine-script-reference/v4/#fun_tickerid
+
+// One year Fibonacci Retracement
+yF1000  = security(tickerid, '12M', high)   // Creates a ticker indentifier for requesting "Year" high from symbols
+yF0    = security(tickerid, '12M', low)     // Creates a ticker indentifier for requesting "Year" low from symbols
+yF234  = (yF1000-yF0)*0.766+yF0             // Fibonacci Trailing Stop
+//yF236  = (yF1000-yF0)*0.784+yF0           // Fibonacci Retracement Level 23.6%
+yF382  = (yF1000-yF0)*0.618+yF0             // Fibonacci Retracement Level 38.2%
+yF500  = (yF1000-yF0)/2+yF0                 // Fibonacci Retracement Level 50%
+//yF618  = (yF1000-yF0)*0.382+yF0           // Fibonacci Retracement Level 61.8%
+yF786  = (yF1000-yF0)*0.214+yF0             // Fibonacci Retracement Level 78.6%
+
+plot(YFVisible?yF0:na, color = white, linewidth = 2)
+plot(YFVisible?yF234:na, color = red, linewidth = 1)
+//plot(YFVisible?yF382:na)
+plot(YFVisible?yF500:na, color = yellow, linewidth = 2)
+//plot(YFVisible?yF618:na)
+plot(YFVisible?yF786:na, color = lime, linewidth = 1)
+plot(YFVisible?yF1000:na, color = white, linewidth = 2)
+
+//2 months Fibonacci Retracement
+_2mF100  = security(tickerid, '2M', high)   // Creates a ticker indentifier for requesting "2 Months" daily high from symbols
+_2mF0    = security(tickerid, '2M', low)    // Creates a ticker indentifier for requesting "2 months" daily low from symbols
+
+_2mF234  = (_2mF100-_2mF0)*0.766+_2mF0      // Fibonacci Trailing Stop
+//_2mF236  = (_2mF100-_2mF0)*0.784+_2mF0    // Fibonacci Retracement Level 23.6%
+//_2mF382  = (_2mF100-_2mF0)*0.618+_2mF0    // Fibonacci Retracement Level 38.2%
+_2mF500  = (_2mF100-_2mF0)/2+_2mF0          // Fibonacci Retracement Level 50%
+//_2mF618  = (_2m100-mF0)*0.382+_2mF0       // Fibonacci Retracement Level 61.8%
+_2mF786  = (_2mF100-_2mF0)*0.214+_2mF0      // Fibonacci Retracement Level 78.6%
+
+plot(MFVisible?_2mF0:na, color = silver, linewidth = 3)
+plot(MFVisible?_2mF234:na, color = red, style=circles, linewidth = 1)
+//plot(MFVisible?_2mF382:na)
+plot(MFVisible?_2mF500:na, color = orange, linewidth = 3)
+//plot(MFVisible?_2mF618:na)
+plot(MFVisible?_2mF786:na, color = lime, style=circles, linewidth = 1)
+plot(MFVisible?_2mF100:na, color = silver, linewidth = 3)
+//plot(MFVisible?_2mF100[147]:na, title="Last Month High", color = silver, style = circles, linewidth = 1)
+
+// Month Fibonacci Retracement
+mF1000  = security(tickerid, 'M', high)     // Creates a ticker indentifier for requesting "Month" daily high from symbols
+mF0    = security(tickerid, 'M', low)       // Creates a ticker indentifier for requesting "Month" daily low from symbols
+
+mF234  = (mF1000-mF0)*0.766+mF0             // Fibonacci Trailing Stop
+//mF236  = (mF1000-mF0)*0.784+mF0           // Fibonacci Retracement Level 23.6%
+//mF382  = (mF1000-mF0)*0.618+mF0           // Fibonacci Retracement Level 38.2%
+mF500  = (mF1000-mF0)/2+mF0                 // Fibonacci Retracement Level 50%
+//mF618  = (mF1000-mF0)*0.382+mF0           // Fibonacci Retracement Level 61.8%
+mF786  = (mF1000-mF0)*0.214+mF0             // Fibonacci Retracement Level 78.6%
+
+plot(MFVisible?mF0:na, color = gray, linewidth = 2)
+plot(MFVisible?mF234:na, color = maroon, style = circles, linewidth = 1)
+//plot(MFVisible?mF234[147]:na, color = red, style = circles, linewidth = 1)
+//plot(MFVisible?mF382:na)
+plot(MFVisible?mF500:na, color = gray, linewidth = 2)
+//plot(MFVisible?mF618:na)
+plot(MFVisible?mF786:na, color = green,  style = circles, linewidth = 1)
+//plot(MFVisible?mF786[147]:na, color = lime, style = circles, linewidth = 1)
+plot(MFVisible?mF1000:na, color = gray, linewidth = 2)
+
+// Week Fibonacci Retracement
+wF1000 = security(tickerid, 'W', high)      // Creates a ticker indentifier for requesting "W" weekly high from symbols
+wF0   = security(tickerid, 'W', low)        // Creates a ticker indentifier for requesting "W" weekly low from symbols
+
+wF234 = (wF1000-wF0)*0.766+wF0              // Fibonacci Trailing Stop
+//wF236 = (wF1000-wF0)*0.784+wF0            // Fibonacci Retracement Level 23.6%
+//wF382 = (wF1000-wF0)*0.618+wF0            // Fibonacci Retracement Level 38.2%
+wF500 = (wF1000-wF0)/2+wF0                  // Fibonacci Retracement Level 50%
+//wF618 = (wF1000-wF0)*0.382+wF0            // Fibonacci Retracement Level 61.8%
+wF786 = (wF1000-wF0)*0.214+wF0              // Fibonacci Retracement Level 78.6%
+
+plot(WFVisible?wF0:na, color = purple, linewidth = 2)
+plot(WFVisible?wF0[35]:na, title = "Last Week Low", color = purple, style = circles, linewidth = 1)
+plot(WFVisible?wF234:na, color = #FF5252,  linewidth = 2)
+//plot(WFVisible?wF382:na)
+plot(WFVisible?wF500:na, color = fuchsia, linewidth = 2)
+plot(WFVisible?wF500[35]:na, title = "Last Week 50%", color = purple, style = circles, linewidth = 1)
+//plot(WFVisible?wF618:na)
+plot(WFVisible?wF786:na, color = teal,  linewidth = 2)
+plot(WFVisible?wF1000:na, color = purple, linewidth = 2)
+plot(WFVisible?wF1000[35]:na, title = "Last Week High", color = purple, style = circles, linewidth = 1)
+
+// Day Fibonacci Retracement
+dF1000 = security(tickerid, '2D', high)     // Creates a ticker indentifier for requesting "D" daily high from symbols
+dF0   = security(tickerid, '2D', low)       // Creates a ticker indentifier for requesting "D" daily low from symbols
+
+dF234 = (dF1000-dF0)*0.766+dF0              // Fibonacci Trailing Stop
+//dF236 = (dF1000-dF0)*0.784+dF0            // Fibonacci Retracement Level 23.6%
+//dF382 = (dF1000-dF0)*0.618+dF0            // Fibonacci Retracement Level 38.2%
+dF500 = (dF1000-dF0)/2+dF0                  // Fibonacci Retracement Level 50%
+//dF618 = (dF1000-dF0)*0.382+dF0            // Fibonacci Retracement Level 61.8%
+dF786 = (dF1000-dF0)*0.214+dF0              // Fibonacci Retracement Level 78.6%
+
+plot(DFVisible?dF0:na, color = #2196F3, title="Day High", linewidth = 2)
+plot(DFVisible?dF234:na, color = maroon, style = circles, linewidth = 1)
+//plot(DFVisible?dF382:na)
+plot(DFVisible?dF500:na, color = #00FFFF, title="Day 50%", linewidth = 2)
+//plot(DFVisible?dF618:na)
+plot(DFVisible?dF786:na, color = green, style = circles, linewidth = 1)
+plot(DFVisible?dF1000:na, color = #2196F3, title="Day Low", linewidth = 2)
+
+// Units to buy
+amount = 0.1 * (strategy.initial_capital + strategy.netprofit) - strategy.losstrades
+units = floor(amount / close)
+
+// Strategy section
+yF786Long = (crossover(close, yF786) and close > yF786)
+yF234Short = (crossunder(close, yF234) and close < yF234)
+
+// Order Execution section
+if (yF786Long)
+    strategy.order("yF786Long", strategy.long, units,  when=strategy.position_size < units * 5)
+
+if (yF234Short)
+    strategy.order("yF234Short", strategy.short, units, when=strategy.position_size > 0)
+
+
+// Create alert conditions
+alertcondition(yF786Long and (strategy.long == true), message="FR 234 Long @ {{close}}")
+alertcondition(yF234Short and (strategy.short == true),  message="FR 234 Short @ {{close}}")
